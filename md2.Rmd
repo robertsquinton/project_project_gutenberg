@@ -1,0 +1,79 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gutenbergr)
+library(tm)
+library(wordcloud)
+set.seed(256)
+```
+
+In these I was trying to use wordclouds to infer the characteristics of two different bookshelves, Science Fiction and Mathematics, and compare them to a book which was contained in both - Flatland by Edwin A. Abbot. But I ran out of time ironing out the kinks and the results are not really interesting.
+
+```{r data retrieval}
+#math_selection <- gutenberg_metadata %>% 
+#  filter(language == 'en',
+#         rights == "Public domain in the USA.",
+#         has_text,
+#         str_detect(gutenberg_bookshelf, "Mathematics"),
+#         !str_detect(title, "Flatland"),
+#         gutenberg_id > 3651) %>%
+#  gutenberg_download(strip = TRUE)
+
+#scifi_selection <- gutenberg_metadata %>% 
+#  filter(language == 'en',
+#         rights == "Public domain in the USA.",
+#         has_text,
+#         str_detect(gutenberg_bookshelf, "Science Fiction"),
+#         !str_detect(title, "Flatland")) %>%
+#  slice_sample(n = 13) %>%
+#  gutenberg_download(strip = TRUE)
+
+#flatland_selection <- gutenberg_metadata %>%
+#  filter(gutenberg_id == 97)  %>%
+#  gutenberg_download(strip = TRUE)
+
+load(selections.RData)
+```
+
+```{r data prep}
+stopword_regex <- str_flatten(stopwords("SMART"), collapse = "\\s|\\s")
+
+math_cleaned <- str_flatten(math_selection$text, collapse = " \n") %>%
+  str_to_lower() %>%
+  stripWhitespace() %>%
+  removePunctuation() %>%
+  removeNumbers() %>%
+  str_remove_all(stopword_regex)
+math_tfv <- termFreq(math_cleaned)
+math_frequencies <- tibble(word = names(math_tfv), count = unname(math_tfv))
+  
+scifi_cleaned <- str_flatten(scifi_selection$text, collapse = "\n") %>%
+  str_to_lower() %>%
+  stripWhitespace() %>%
+  removePunctuation() %>%
+  removeNumbers() %>%
+  str_remove_all(stopword_regex)
+scifi_tfv <- termFreq(scifi_cleaned)
+scifi_frequencies <- tibble(word = names(scifi_tfv), count = unname(scifi_tfv))
+
+flatland_cleaned <- str_flatten(flatland_selection$text, collapse = "\n") %>%
+  str_to_lower() %>%
+  stripWhitespace() %>%
+  removePunctuation() %>%
+  removeNumbers() %>%
+  str_remove_all(stopword_regex)
+flatland_tfv <- termFreq(flatland_cleaned)
+flatland_frequencies <- tibble(word = names(flatland_tfv), count = unname(flatland_tfv))
+```
+
+```{r visualizations}
+set.seed(256)
+wordcloud(math_frequencies$word, math_frequencies$count, max.words = 100)
+wordcloud(scifi_frequencies$word, scifi_frequencies$count, max.words = 100)
+wordcloud(flatland_frequencies$word, flatland_frequencies$count, max.words = 100)
+```
